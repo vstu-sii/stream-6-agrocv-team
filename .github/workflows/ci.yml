@@ -7,7 +7,9 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main]
+    # main — после мержа; lab1-* — рабочие ветки ролей, чтобы CI гонялся
+    # ещё до открытия PR.
+    branches: [main, "lab1-*"]
   workflow_dispatch:
 
 permissions:
