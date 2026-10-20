@@ -1,0 +1,76 @@
+name: CI
+
+# Лаба 1, роль Delivery: на каждом PR — lint, format, build.
+# Ветка main защищена: без зелёного CI мёрж не проходит.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  RUFF_VERSION: "0.17.1"
+  PYTHON_VERSION: "3.13"
+
+jobs:
+  lint:
+    name: Lint (ruff check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install ruff
+        run: pip install "ruff==${{ env.RUFF_VERSION }}"
+      - name: Ruff check
+        run: ruff check .
+
+  format:
+    name: Format (ruff format --check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install ruff
+        run: pip install "ruff==${{ env.RUFF_VERSION }}"
+      - name: Ruff format check
+        run: ruff format --check .
+
+  build:
+    name: Build (docker image + compose)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t agrocv-api:ci .
+      - name: Validate compose file
+        run: docker compose -f compose.dev.yml config -q
+      - name: Smoke check of the image
+        run: |
+          docker run -d --name agrocv-smoke -p 8000:8000 agrocv-api:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/healthz > /dev/null; then
+              echo "service is healthy"
+              curl -fsS http://127.0.0.1:8000/
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "service did not become healthy"
+          docker logs agrocv-smoke
+          exit 1
+      - name: Cleanup
+        if: always()
+        run: docker rm -f agrocv-smoke || true

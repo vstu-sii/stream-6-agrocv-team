@@ -1,0 +1,32 @@
+name: Keep alive
+
+# Бесплатные тарифы (Render, Koyeb) усыпляют инстанс после простоя, и первый
+# запрос к «спящему» сервису отвечает долго. Раз в 10 минут дёргаем публичный
+# URL, чтобы проверяющий получал быстрый ответ.
+#
+# Адрес задаётся в GitHub: Settings → Secrets and variables → Actions →
+# Variables → DEPLOY_URL. Пока переменная не задана, workflow ничего не делает.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    name: Ping public URL
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping
+        env:
+          DEPLOY_URL: ${{ vars.DEPLOY_URL }}
+        run: |
+          if [ -z "$DEPLOY_URL" ]; then
+            echo "DEPLOY_URL не задан — пинг пропущен"
+            exit 0
+          fi
+          curl -fsS --max-time 30 "$DEPLOY_URL/healthz"
+          echo "ok"
