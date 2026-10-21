@@ -1,4 +1,4 @@
-"""Конфигурация сервиса: только переменные окружения, секреты в репозиторий не попадают."""
+"""Конфигурация сервиса."""
 
 from __future__ import annotations
 
@@ -8,7 +8,6 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Settings:
-    """Значения, с которыми запускается сервис."""
 
     app_name: str
     stage: str
@@ -20,12 +19,10 @@ class Settings:
 
     @property
     def model_configured(self) -> bool:
-        """Заданы ли учётные данные внешнего сервиса."""
         return bool(self.model_api_key)
 
 
 def load_settings() -> Settings:
-    """Читает конфигурацию из окружения, подставляя значения по умолчанию."""
     return Settings(
         app_name=os.getenv("APP_NAME", "agrocv-api"),
         stage=os.getenv("APP_STAGE", "dev"),

@@ -1,25 +1,20 @@
 # AgroCV — диагностика болезней растений по фото
 
-> AI-система, которая по фото листа, стебля или цветка распознаёт растение,
-> ставит диагноз и предлагает конкретное лечение.
-
 [![CI](https://github.com/vstu-sii/stream-6-agrocv-team/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/vstu-sii/stream-6-agrocv-team/actions/workflows/ci.yml)
 [![Статус](https://img.shields.io/badge/status-in_development-yellow)](https://github.com/vstu-sii/stream-6-agrocv-team)
 [![Курс](https://img.shields.io/badge/course-SII_2026-blue)](https://sii.sergeivolchkov.ru)
 
-**Лаба 1 — «Инициация проекта», роль Delivery.** В репозитории — инфраструктурный
-каркас: приложение с заглушкой, dev-окружение на Docker Compose, CI и план
-деплоя. Содержательная часть проекта (PRD, модель, критерии качества)
-появляется силами других ролей команды.
+Проект курса «Системы искусственного интеллекта».
 
-## Команда
+## О проекте
 
-| Роль | Участник | GitHub | Основные задачи |
-|------|----------|--------|-----------------|
-| Product / Vision Owner | Иван Холодов | _добавит роль_ | Сегмент, гипотезы, use cases, скоуп |
-| AI Engineer | Сосновщенко Олег | _добавит роль_ | Промпты, RAG, качество ответов модели |
-| Delivery Engineer | Олег Степанченко | [@TestMaster-AI](https://github.com/TestMaster-AI) | Приложение, compose, CI/CD, прод |
-| AI Quality & Safety Engineer | Данила Цыганков | _добавит роль_ | Evals, регрессия, безопасность LLM |
+В качестве проекта выступает AI-система, которая по фото листа, стебля или цветка распознаёт вид растения, ставит диагноз и предлагает конкретное лечение.
+
+## Прод
+
+Публичный URL hello-world: https://agrocv.onrender.com/
+
+Сейчас в проде — заглушка (`GET /`, `GET /healthz`, `GET /docs`), размещённая на Render.com.
 
 ## Структура репозитория
 
@@ -34,7 +29,7 @@
 │   ├── main.py             # HTTP-сервис: / и /healthz
 │   └── stub_gateway.py     # заглушка внешнего сервиса для dev
 ├── docs/
-│   └── deploy.md           # варианты хостинга, публичный URL, обновление
+│   └── deploy.md           # документация по деплою
 ├── .env.example            # пример переменных окружения (без секретов)
 ├── .gitignore
 ├── compose.dev.yml         # dev-окружение: приложение + заглушка
@@ -51,7 +46,7 @@ Product; `docs/research.md`, `docs/model-candidates.md`, `docs/experiments/` —
 
 ## Архитектура (текущее состояние)
 
-Два контейнера, HTTP между ними:
+В dev-окружении поднимаются два контейнера, HTTP между ними (в проде - один (приложение)):
 
 ```
 клиент ──HTTP──▶ api (FastAPI, :8000) ──HTTP──▶ внешний модельный шлюз
@@ -60,7 +55,7 @@ Product; `docs/research.md`, `docs/model-candidates.md`, `docs/experiments/` —
 ```
 
 Пока настоящего модельного шлюза нет, приложение отвечает карточкой сервиса
-на `GET /` и проверкой живости на `GET /healthz`. Логику диагностики
+на `GET /` и проверкой состояния на `GET /healthz`. Логику диагностики
 подключает роль AI Engineer; контракт внешнего шлюза — в
 `app/stub_gateway.py` (`POST /v1/diagnose`).
 
@@ -85,8 +80,8 @@ docker compose -f compose.dev.yml up -d --build
 
 Что доступно после подъёма:
 
-| Адрес | Что это |
-|-------|---------|
+| Адрес | Описание |
+|-------|----------|
 | <http://127.0.0.1:8000/> | карточка сервиса |
 | <http://127.0.0.1:8000/healthz> | проверка живости |
 | <http://127.0.0.1:8000/docs> | Swagger UI |
@@ -130,17 +125,20 @@ ruff format --check .
 | `Format (ruff format --check)` | `ruff format --check .` |
 | `Build (docker image + compose)` | `docker build`, проверка `compose.dev.yml` и `compose.prod.yml`, smoke-тест контейнера через `/healthz` |
 
-Ветка `main` защищена: без зелёного CI мёрж не проходит. Статус прогона —
+Ветка `main` защищена: без зелёного CI merge не проходит. Статус прогона —
 бейдж вверху страницы.
 
-## Прод
+## Команда
 
-Публичный URL hello-world:
+| Роль | Основные задачи |
+|------|-----------------|
+| Product / Vision Owner | Сегмент, гипотезы, use cases, скоуп |
+| AI Engineer | Промпты, RAG, качество ответов модели |
+| Delivery Engineer | Приложение, compose, CI/CD, прод |
+| AI Quality & Safety Engineer | Evals, регрессия, безопасность LLM |
 
-<!-- TODO(ddelivery): вписать URL после деплоя, см. docs/deploy.md -->
-
-Как поднять и где будет жить релиз — в [docs/deploy.md](docs/deploy.md).
+Детальный состав команды доступен внутри курса.
 
 ## Документация
 
-- [Деплой, варианты хостинга и публичный URL](docs/deploy.md)
+- [Deployment Guide](docs/deploy.md)

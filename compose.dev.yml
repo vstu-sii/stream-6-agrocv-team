@@ -1,6 +1,3 @@
-# Dev-окружение AgroCV.
-# Подъём одной командой:  docker compose -f compose.dev.yml up -d --build
-# Состав: api — само приложение, stub-gateway — заглушка внешнего сервиса.
 name: agrocv-dev
 
 services:

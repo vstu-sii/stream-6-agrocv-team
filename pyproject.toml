@@ -1,11 +1,8 @@
 [project]
 name = "agrocv-api"
 version = "0.1.0"
-description = "AgroCV — сервис диагностики болезней растений по фото (Лаба 1, роль Delivery)"
+description = "AgroCV — сервис диагностики болезней растений по фото"
 requires-python = ">=3.13"
-
-# Зависимости приложения зафиксированы в requirements.txt — оттуда же
-# собирается образ. Здесь только настройки инструментов.
 
 [tool.ruff]
 line-length = 100

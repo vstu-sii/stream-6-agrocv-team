@@ -1,14 +1,9 @@
 name: CI
 
-# Лаба 1, роль Delivery: на каждом PR — lint, format, build.
-# Ветка main защищена: без зелёного CI мёрж не проходит.
-
 on:
   pull_request:
     branches: [main]
   push:
-    # main — после мержа; lab1-* — рабочие ветки ролей, чтобы CI гонялся
-    # ещё до открытия PR.
     branches: [main, "lab1-*"]
   workflow_dispatch:
 
