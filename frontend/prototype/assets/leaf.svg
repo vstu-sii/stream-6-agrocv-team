@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 300" width="420" height="300" role="img" aria-label="Снимок листа томата с бурыми пятнами">
+  <defs>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7fae62"/>
+      <stop offset="100%" stop-color="#4d7a3c"/>
+    </linearGradient>
+  </defs>
+  <rect width="420" height="300" fill="#eef2ea"/>
+  <path d="M30 250 C120 240 300 235 395 150 C420 120 400 70 350 55 C250 25 90 70 45 150 C25 185 20 225 30 250 Z" fill="url(#leaf)"/>
+  <path d="M40 240 C120 215 230 175 340 95" stroke="#3c6330" stroke-width="3" fill="none"/>
+  <g fill="#8a5a2b" opacity="0.85">
+    <circle cx="150" cy="150" r="11"/>
+    <circle cx="196" cy="118" r="8"/>
+    <circle cx="238" cy="150" r="13"/>
+    <circle cx="120" cy="196" r="9"/>
+    <circle cx="278" cy="108" r="7"/>
+    <circle cx="196" cy="196" r="10"/>
+    <circle cx="262" cy="180" r="6"/>
+    <circle cx="108" cy="120" r="6"/>
+  </g>
+  <g fill="#5f3c1c">
+    <circle cx="150" cy="150" r="4"/>
+    <circle cx="238" cy="150" r="5"/>
+    <circle cx="196" cy="196" r="4"/>
+  </g>
+</svg>

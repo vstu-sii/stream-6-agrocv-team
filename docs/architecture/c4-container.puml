@@ -1,0 +1,43 @@
+@startuml agrocv-containers
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+' ── Container level ───────────────────────────────────────────────────
+' Scope:    одна система, один уровень глубже
+' Audience: разработчики, архитектор, ops
+' Shows:    исполняемые единицы и хранилища внутри AgroCV, технологии
+'           и то, как они общаются.
+'
+' Источник правил для aact: ../../aact.config.ts
+' Контекст уровнем выше:     c4-context.puml
+' Схема данных:              erd.puml
+
+Person(gardener, "Новичок в саду", "Фотографирует растение и хочет понять, что с ним и что делать")
+Person(agronomist, "Агроном / продавец питомника", "Ставит диагноз по листу, отвечает за назначение обработки")
+
+System_Ext(model_provider, "Модельный провайдер", "Облачные VLM/LLM по API: распознавание растения и текст диагноза")
+System_Ext(drug_reference, "Справочник препаратов", "Внешний источник: препарат, дозировка, срок ожидания")
+
+System_Boundary(agrocv, "AgroCV") {
+  Container(web, "Веб-приложение", "TypeScript, React", "Загружает фото листа, показывает диагноз, назначение и журнал обработки")
+  Container(api, "API-сервис", "Python, FastAPI", "Принимает фото, ставит задачу в очередь, отдаёт статус и результат диагностики")
+  Container(ai_worker, "AI-воркер", "Python", "Разбирает очередь: распознавание растения, диагноз, проверка назначения по справочнику")
+  Container(llm_acl, "Адаптер модельного провайдера", "Python", "Переводит запросы и ответы внешней модели в наш контракт", $tags="acl")
+  Container(drug_acl, "Адаптер справочника препаратов", "Python", "Приводит внешний справочник к нашей модели препаратов и норм", $tags="acl")
+  Container(diagnostics_repo, "Репозиторий диагнозов", "Python, SQLAlchemy", "Единственный владелец базы: снимки, диагнозы, назначения, журнал ухода", $tags="repo")
+  ContainerDb(diagnostics_db, "База диагнозов", "PostgreSQL", "Снимки фото, диагнозы, назначения и журнал обработок")
+  ContainerQueue(queue, "Очередь задач", "Redis", "Задачи на диагностику между API-сервисом и AI-воркером")
+}
+
+Rel(gardener, web, "Открывает приложение и загружает фото", "HTTPS")
+Rel(agronomist, web, "Проверяет диагноз и назначение", "HTTPS")
+Rel(web, api, "Отправляет фото и запрашивает статус диагноза", "JSON/HTTPS")
+Rel(api, queue, "Кладёт задачу и читает статус обработки", "RESP")
+Rel(ai_worker, queue, "Забирает задачи и возвращает результат", "RESP", $tags="async")
+Rel(ai_worker, llm_acl, "Просит распознать растение и поставить диагноз", "JSON/HTTPS")
+Rel(ai_worker, drug_acl, "Уточняет препарат, дозировку и срок ожидания", "JSON/HTTPS")
+Rel(llm_acl, model_provider, "Вызывает модель", "HTTPS via API Gateway")
+Rel(drug_acl, drug_reference, "Читает справочник препаратов", "HTTPS via API Gateway")
+Rel(api, diagnostics_repo, "Сохраняет и читает снимки, диагнозы и назначения", "SQL")
+Rel(diagnostics_repo, diagnostics_db, "PostgreSQL")
+
+@enduml

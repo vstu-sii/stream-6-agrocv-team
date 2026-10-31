@@ -1,6 +1,50 @@
+# Dev-скелет системы. Реальные сервисы здесь api — наше приложение,
+# web — прототип интерфейса. Остальные — заглушки будущей системы.
+#
+# Соответствует C4: docs/architecture/c4-container.puml
+# Решения: docs/adr/
 name: agrocv-dev
 
+networks:
+  agrocv-net:
+    driver: bridge
+
+volumes:
+  db-data:
+  photos:
+
+x-stub: &stub
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: agrocv-stub:dev
+  command: ["uvicorn", "app.stub_service:app", "--host", "0.0.0.0", "--port", "8080"]
+  networks: [agrocv-net]
+  restart: unless-stopped
+
+x-stub-healthcheck: &stub-healthcheck
+  test: ["CMD", "python", "-c", "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/healthz').status == 200 else 1)"]
+  interval: 10s
+  timeout: 3s
+  retries: 5
+  start_period: 5s
+
 services:
+  web:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./frontend/prototype:/usr/share/nginx/html:ro
+    ports:
+      - "${WEB_PORT:-8090}:80"
+    networks: [agrocv-net]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
   api:
     build:
       context: .
@@ -12,12 +56,24 @@ services:
     environment:
       APP_STAGE: dev
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      MODEL_BASE_URL: http://stub-gateway:8080
+      MODEL_BASE_URL: http://model-provider:8080
+      PHOTOS_DIR: /srv/data/photos
+    volumes:
+      - photos:/srv/data/photos
     ports:
       - "${API_PORT:-8000}:8000"
     depends_on:
-      stub-gateway:
+      model-provider:
         condition: service_healthy
+      drug-reference:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      queue:
+        condition: service_healthy
+      ai-worker:
+        condition: service_healthy
+    networks: [agrocv-net]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz').status == 200 else 1)"]
       interval: 10s
@@ -26,21 +82,44 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  stub-gateway:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: agrocv-stub-gateway:dev
+  ai-worker:
+    <<: *stub
+    environment:
+      SERVICE_NAME: ai-worker
+      SERVICE_KIND: воркер AI-пайплайна
+    healthcheck: *stub-healthcheck
+
+  model-provider:
+    <<: *stub
+    # Заглушка внешнего модельного провайдера: контракт /v1/diagnose
+    # (app/stub_gateway.py) — тот же, что ждёт AI-воркер.
     command: ["uvicorn", "app.stub_gateway:app", "--host", "0.0.0.0", "--port", "8080"]
     environment:
-      APP_STAGE: dev
-      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      SERVICE_NAME: model-provider
+      SERVICE_KIND: заглушка внешнего модельного провайдера
     ports:
-      - "${STUB_PORT:-8080}:8080"
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/healthz').status == 200 else 1)"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-      start_period: 10s
-    restart: unless-stopped
+      - "${MODEL_PROVIDER_PORT:-8080}:8080"
+    healthcheck: *stub-healthcheck
+
+  drug-reference:
+    <<: *stub
+    environment:
+      SERVICE_NAME: drug-reference
+      SERVICE_KIND: заглушка справочника препаратов
+    healthcheck: *stub-healthcheck
+
+  db:
+    <<: *stub
+    environment:
+      SERVICE_NAME: db
+      SERVICE_KIND: заглушка хранилища диагнозов
+    volumes:
+      - db-data:/srv/data/db
+    healthcheck: *stub-healthcheck
+
+  queue:
+    <<: *stub
+    environment:
+      SERVICE_NAME: queue
+      SERVICE_KIND: заглушка очереди задач
+    healthcheck: *stub-healthcheck

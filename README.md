@@ -22,17 +22,26 @@
 .
 ├── .github/
 │   └── workflows/
-│       └── ci.yml          # lint, format, build — GitHub Actions
+│       └── ci.yml          # lint, format, aact, build — GitHub Actions
 ├── app/
 │   ├── __init__.py
 │   ├── config.py           # конфигурация из переменных окружения
 │   ├── main.py             # HTTP-сервис: / и /healthz
-│   └── stub_gateway.py     # заглушка внешнего сервиса для dev
+│   ├── stub_gateway.py     # заглушка модельного шлюза для dev
+│   └── stub_service.py     # заглушка сервисов для dev
+├── database/
+│   └── schema.sql          # схема БД
 ├── docs/
-│   └── deploy.md           # документация по деплою
+│   ├── adr/                # ADR архитектуры
+│   ├── architecture/       # ERD, context- и container-диаграммы в PlantUML
+│   ├── quality/            # критерии успеха, golden dataset, DoD
+│   └── ...                 # документация PRD, ресёрч, модели, эксперименты, деплой
+├── frontend/
+│   └── prototype/          # Web-прототип UI + скриншоты
 ├── .env.example            # пример переменных окружения (без секретов)
 ├── .gitignore
-├── compose.dev.yml         # dev-окружение: приложение + заглушка
+├── aact.config.ts          # правила проверки архитектуры (aact)
+├── compose.dev.yml         # dev-скелет: web, api + заглушки
 ├── compose.yml             # стандартный конфигурационный файл окружения
 ├── Dockerfile              # образ приложения
 ├── pyproject.toml          # настройки ruff (линт и формат в CI)
@@ -40,22 +49,19 @@
 └── requirements.txt        # зависимости для сборки образа
 ```
 
-Структура пополняется по мере работы команды: `docs/prd.md`,
-`docs/hypotheses.md`, `docs/glossary.md`, `docs/brief.md` — зона роли
-Product; `docs/research.md`, `docs/model-candidates.md`, `docs/experiments/` —
-зона роли AI; `docs/quality/`, `evals/`, `tests/` — зона роли Quality.
+Структура дополняется по мере развития проекта.
 
 ## Архитектура (текущее состояние)
 
-В dev-окружении поднимаются два контейнера, HTTP между ними (в проде - один (приложение)):
+В dev-окружении поднимаются 7 контейнеров (api, web + 5 заглушек):
 
 ```
-клиент ──HTTP──▶ api (FastAPI, :8000) ──HTTP──▶ внешний модельный шлюз
-                                  │
-                                  └──▶ в dev это stub-gateway (:8080)
+клиент → web → api → [queue] → ai_worker → адаптеры → внешние системы
+                       ↑                    │
+                       └── репозиторий ←───┘
 ```
 
-Пока настоящего модельного шлюза нет, приложение отвечает карточкой сервиса
+Пока настоящих модельного шлюза и сервисов нет, приложение отвечает карточкой сервиса
 на `GET /` и проверкой состояния на `GET /healthz`. Логику диагностики
 подключает роль AI Engineer; контракт внешнего шлюза — в
 `app/stub_gateway.py` (`POST /v1/diagnose`).
@@ -87,6 +93,7 @@ docker compose -f compose.dev.yml up -d --build
 | <http://127.0.0.1:8000/healthz> | проверка живости |
 | <http://127.0.0.1:8000/docs> | Swagger UI |
 | <http://127.0.0.1:8080/healthz> | заглушка внешнего сервиса |
+| <http://127.0.0.1:8090/> | Web-прототип |
 
 Проверка и остановка:
 
@@ -124,6 +131,7 @@ ruff format --check .
 |------|------------|
 | `Lint (ruff check)` | `ruff check .` |
 | `Format (ruff format --check)` | `ruff format --check .` |
+| `Architecture (aact check)` | `npx --yes aact@beta check` |
 | `Build (docker image + compose)` | `docker build`, проверка `compose.dev.yml`, smoke-тест контейнера через `/healthz` |
 
 Ветка `main` защищена: без зелёного CI merge не проходит. Статус прогона —

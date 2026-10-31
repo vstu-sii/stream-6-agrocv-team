@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AgroCV — диагноз</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>AgroCV</h1>
+    <span class="tag">диагностика болезней растений по фото</span>
+    <nav>
+      <a href="index.html">Новый диагноз</a>
+      <a href="diagnosis.html" class="active">Диагноз</a>
+      <a href="journal.html">Журнал ухода</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="card">
+      <div class="row">
+        <div class="col">
+          <h2>Снимок</h2>
+          <div class="drop">
+            <img src="assets/leaf.svg" alt="Снимок листа томата с бурыми пятнами">
+            <div class="hint">tomato-leaf-septoria.jpg</div>
+          </div>
+        </div>
+        <div class="col">
+          <h2>Диагноз</h2>
+          <p class="sub">Септориоз томата (Septoria lycopersici) · уверенность 0.87</p>
+          <dl class="kv">
+            <dt>Растение</dt><dd>томат, детерминированный сорт</dd>
+            <dt>Болезнь</dt><dd>септориоз — грибковое поражение листьев</dd>
+            <dt>Как узнали</dt><dd>модель <code>vision-diagnosis</code>, версия 2026-10</dd>
+            <dt>Что на фото</dt><dd>бурые пятна с тёмной каймой по краю листа</dd>
+          </dl>
+          <p style="margin-top:18px"><a class="btn" href="journal.html">Записать в журнал ухода</a></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Назначение</h2>
+      <p class="sub">Сверено со справочником препаратов: препарат, дозировка, частота и срок ожидания.</p>
+      <dl class="kv">
+        <dt>Препарат</dt><dd>хлорокись меди (медь хлорид меди), 50%</dd>
+        <dt>Дозировка</dt><dd>10 г на 10 л воды</dd>
+        <dt>Частота</dt><dd>обработка каждые 7 дней, 2–3 раза</dd>
+        <dt>Срок ожидания</dt><dd>20 дней до сбора урожая</dd>
+        <dt>Что делать</dt><dd>удалить поражённые листья, проветривать теплицу, не заливать</dd>
+      </dl>
+      <p class="alert" style="margin-top:18px">
+        Диагноз не заменяет агронома: при сильном поражении или подозрении на
+        корневые болезни нужен осмотр растения. Ошибка в диагнозе стоит урожая,
+        ошибка в дозировке — опасна.
+      </p>
+    </div>
+  </main>
+
+  <footer>Прототип интерфейса, лаба 2 · роль Delivery. Данные вымышленные.</footer>
+</body>
+</html>

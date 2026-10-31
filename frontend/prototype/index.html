@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AgroCV — новый диагноз</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>AgroCV</h1>
+    <span class="tag">диагностика болезней растений по фото</span>
+    <nav>
+      <a href="index.html" class="active">Новый диагноз</a>
+      <a href="diagnosis.html">Диагноз</a>
+      <a href="journal.html">Журнал ухода</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>Сфотографируйте лист</h2>
+      <p class="sub">Снимок уходит в очередь на диагностику: распознавание растения, диагноз и сверка назначения со справочником препаратов.</p>
+
+      <div class="row">
+        <div class="col">
+          <div class="drop">
+            <img src="assets/leaf.svg" alt="Снимок листа томата с бурыми пятнами">
+            <div class="hint">tomato-leaf-septoria.jpg · 1.8 МБ</div>
+          </div>
+        </div>
+        <div class="col">
+          <h3>Что известно</h3>
+          <dl class="kv">
+            <dt>Задача</dt><dd><span class="pill">в работе</span> взята в очередь</dd>
+            <dt>Растение</dt><dd>томат (предположительно)</dd>
+            <dt>Куда ушло</dt><dd>AI-воркер, модель <code>vision-diagnosis</code></dd>
+            <dt>Когда будет</dt><dd>обычно 10–30 секунд</dd>
+          </dl>
+          <p style="margin-top:20px"><a class="btn" href="diagnosis.html">Показать результат</a></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Что понадобится для точного диагноза</h2>
+      <p class="sub">Прототип интерфейса: на этом шаге собираем вход, дальше — результат.</p>
+      <dl class="kv">
+        <dt>Снимок</dt><dd>лист целиком, при дневном свете, без теней</dd>
+        <dt>Растение</dt><dd>достаточно назвать вид или выбрать из списка</dd>
+        <dt>Симптомы</dt><dd>необязательно: пятна, налёт, увядание, следы насекомых</dd>
+        <dt>Контекст</dt><dd>теплица или открытый грунт, как часто поливаете</dd>
+      </dl>
+    </div>
+  </main>
+
+  <footer>Прототип интерфейса, лаба 2 · роль Delivery. Данные вымышленные.</footer>
+</body>
+</html>
