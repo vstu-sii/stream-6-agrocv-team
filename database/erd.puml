@@ -1,0 +1,84 @@
+@startuml agrocv-erd
+' ── ERD ──────────────────────────────────────────────────────────────
+' Схема данных AgroCV. Соответствует database/schema.sql
+' Решение о владельце данных: docs/adr/data-access.md
+
+entity photos {
+  id uuid PK
+  file_name varchar
+  content_type varchar
+  size_bytes int
+  sha256 varchar
+  uploaded_at timestamptz
+}
+
+entity diagnoses {
+  id uuid PK
+  photo_id FK
+  plant_id FK
+  disease_id FK
+  confidence numeric
+  source varchar
+  model_version varchar
+  created_at timestamptz
+}
+
+entity plants {
+  id uuid PK
+  name_ru varchar
+  name_latin varchar
+}
+
+entity diseases {
+  id uuid PK
+  name varchar
+  kind varchar
+  description text
+}
+
+entity treatments {
+  id uuid PK
+  diagnosis_id FK
+  drug_id FK
+  dosage varchar
+  frequency varchar
+  waiting_days int
+  note text
+  created_at timestamptz
+}
+
+entity drugs {
+  id uuid PK
+  name varchar
+  active_substance varchar
+  dosage_min varchar
+  dosage_max varchar
+  waiting_days int
+  source_updated_at timestamptz
+}
+
+entity journal_entries {
+  id uuid PK
+  treatment_id FK
+  applied_at timestamptz
+  note text
+}
+
+entity diagnosis_jobs {
+  id uuid PK
+  photo_id FK
+  status varchar
+  error text
+  created_at timestamptz
+  finished_at timestamptz
+}
+
+photos ||--o{ diagnoses : "снимок → диагнозы"
+plants ||--o{ diagnoses : "растение → диагнозы"
+diseases ||--o{ diagnoses : "болезнь → диагнозы"
+diagnoses ||--o{ treatments : "диагноз → назначения"
+drugs ||--o{ treatments : "препарат → назначения"
+treatments ||--o{ journal_entries : "назначение → журнал ухода"
+photos ||--o{ diagnosis_jobs : "снимок → задачи диагностики"
+
+@enduml

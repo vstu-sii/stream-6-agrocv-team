@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AgroCV — журнал ухода</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>AgroCV</h1>
+    <span class="tag">диагностика болезней растений по фото</span>
+    <nav>
+      <a href="index.html">Новый диагноз</a>
+      <a href="diagnosis.html">Диагноз</a>
+      <a href="journal.html" class="active">Журнал ухода</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>Журнал ухода</h2>
+      <p class="sub">Обработку проводят и отменить её нельзя — поэтому запись в журнал и есть результат.</p>
+      <table>
+        <thead>
+          <tr><th>Дата</th><th>Назначение</th><th>Препарат</th><th>Дозировка</th><th>Статус</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>18.10.2026</td>
+            <td>септориоз томата</td>
+            <td>хлорокись меди, 50%</td>
+            <td>10 г / 10 л</td>
+            <td><span class="pill">проведено</span></td>
+          </tr>
+          <tr>
+            <td>25.10.2026</td>
+            <td>септориоз томата</td>
+            <td>хлорокись меди, 50%</td>
+            <td>10 г / 10 л</td>
+            <td><span class="pill warn">запланировано</span></td>
+          </tr>
+          <tr>
+            <td>01.11.2026</td>
+            <td>септориоз томата</td>
+            <td>хлорокись меди, 50%</td>
+            <td>10 г / 10 л</td>
+            <td class="muted">срок ожидания 20 дней</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Добавить запись</h2>
+      <p class="sub">Запись в журнале — подтверждение, что обработка проведена.</p>
+      <dl class="kv">
+        <dt>Дата обработки</dt><dd>20.10.2026</dd>
+        <dt>Назначение</dt><dd>септориоз томата · от 18.10.2026</dd>
+        <dt>Отметка</dt><dd>проведено, обработано 6 растений</dd>
+      </dl>
+      <p style="margin-top:18px"><button class="btn">Записать</button> <a class="btn ghost" href="diagnosis.html">К диагнозу</a></p>
+    </div>
+  </main>
+
+  <footer>Прототип интерфейса, лаба 2 · роль Delivery. Данные вымышленные.</footer>
+</body>
+</html>

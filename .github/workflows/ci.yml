@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, "lab1-*"]
+    branches: [main, "lab2-*"]
   workflow_dispatch:
 
 permissions:
@@ -44,6 +44,17 @@ jobs:
         run: pip install "ruff==${{ env.RUFF_VERSION }}"
       - name: Ruff format check
         run: ruff format --check .
+
+  architecture:
+    name: Architecture (aact check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: aact check
+        run: npx --yes aact@beta check
 
   build:
     name: Build (docker image + compose)
