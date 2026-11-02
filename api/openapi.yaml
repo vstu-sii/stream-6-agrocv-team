@@ -1,0 +1,444 @@
+openapi: 3.1.0
+info:
+  title: AgroCV Local AI API
+  version: 0.1.0
+  description: |
+    Целевой контракт Desktop UI (Delivery) ↔ локальный AI worker.
+    Статус: проект для совместной реализации, а не описание уже работающего сервера.
+    Основной профиль: Qwen3-VL-4B-Instruct NF4; 2B — только после допуска.
+    Прямой промпт observations_first, одно фото, один вызов модели на запрос.
+    SAM, RAG, агент, обучение, облако и автоматическое скачивание весов отсутствуют.
+    Видимые симптомы и гипотеза не подтверждают возбудителя; лечения и вероятностей нет.
+    Все $ref внутренние; связанные документы находятся в локальном репозитории.
+servers:
+  - url: http://127.0.0.1:8765
+    description: Локальный сервис на ПК; порт — предлагаемое соглашение Delivery.
+security:
+  - LocalSessionToken: []
+tags:
+  - name: Runtime
+    description: Состояние локального процесса и доступные профили.
+  - name: Inference
+    description: Анализ одного фото без сохранения истории диалога.
+x-local-documents:
+  - ../docs/ai-pipeline.md
+  - ../docs/model-candidates.md
+  - ../docs/experiments/lab2.md
+x-delivery:
+  status: proposed-for-implementation
+  ai-owner: Промпт, processor, таксономия, Q0–Q4, строгая валидация и метрики.
+  delivery-owner: Desktop UI, запуск сервиса, локальный токен, HTTP, watchdog, журнал и отображение ошибок.
+  integration-rules:
+    - Сервис слушает только loopback; Delivery передаёт случайный токен сессии вне URL.
+    - Токен создаётся при старте сервиса; браузерный CORS по умолчанию выключен.
+    - Один активный анализ, без очереди; конкурентный запрос получает 409 BUSY.
+    - Переключение профиля выгружает предыдущую модель и её тензоры до загрузки новой.
+    - Веса/processor берутся только из локального snapshot; CPU-offload не включается скрыто.
+    - Загрузка ограничена отдельным watchdog 180 с; обработка после готовности — 120 с.
+    - Delivery задаёт HTTP timeout 310 с, не повторяет POST автоматически.
+    - При разрыве соединения результат неизвестен клиенту; не создавать скрытый повтор.
+    - request_id регистрируется до загрузки модели; повторный UUID получает 409 без инференса.
+    - Реестр UUID и исходов сохраняется в памяти API до завершения его сессии, независимо от worker.
+    - После перезапуска API реестр сброшен; Delivery не переотправляет прежние запросы автоматически.
+    - Исходные фото не сохраняются этим API; журнал не содержит путей пользователя, EXIF или токена.
+    - Сырой ответ хранится в локальном журнале, но не возвращается как диагноз при ошибке.
+  proposed-new-limits: |
+    Порт, лимит 10 MiB на файл / 11 MiB на multipart-запрос, 40 млн исходных
+    пикселей, watchdog загрузки 180 с и HTTP timeout 310 с — новые проектные
+    ограничения Delivery, не результаты lab1 и не измеренный SLA.
+x-quality-gates:
+  Q0: Локальный snapshot, CUDA, профиль NF4, готовность и допуск резервной модели.
+  Q1: Декодирование JPEG/PNG, размер, ориентация EXIF, RGB и допустимая культура.
+  Q2: Не более 3712 входных токенов плюс резерв 384; без скрытой обрезки.
+  Q3: EOS, строгий JSON, уникальные ключи, схема, культура и согласованность полей.
+  Q4: Вне запроса — независимая экспертная оценка качества; JSON не доказывает диагноз.
+x-runtime-validation:
+  - Отклонять повторные ключи JSON до десериализации, включая вложенные объекты.
+  - Запрещать основную disease в alternatives; uniqueItems запрещает дубли альтернатив.
+  - Входные label, prompt, classes, history и пути к файлам запрещены; таксономия фиксирована сервером.
+  - Не включать имя файла, EXIF, эталонную метку и предыдущие ответы в контекст модели.
+  - Проверять input_tokens + 384 <= 4096 и visual_tokens <= input_tokens.
+  - Все технические ошибки возвращать ErrorEnvelope, никогда не заменять ими состояние листа.
+paths:
+  /v1/health:
+    get:
+      tags: [Runtime]
+      operationId: getHealth
+      summary: Состояние API и worker без запуска модели
+      description: HTTP 200 означает, что API отвечает; готовность GPU определяется полями тела.
+      responses:
+        '200':
+          description: Текущее состояние.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/models:
+    get:
+      tags: [Runtime]
+      operationId: listLocalModels
+      summary: Два фиксированных профиля, наличие весов и допуск
+      description: Не скачивает и не загружает веса. qualified не означает лабораторную достоверность диагноза.
+      responses:
+        '200':
+          description: Профили для UI; недоступный резерв нельзя предлагать пользователю.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [primary, fallback]
+                properties:
+                  primary:
+                    $ref: '#/components/schemas/ModelProfile'
+                  fallback:
+                    $ref: '#/components/schemas/ModelProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/analyses:
+    post:
+      tags: [Inference]
+      operationId: analyzeLeaf
+      summary: Синхронный анализ одного фото локальной моделью
+      description: |
+        Сервис принимает JPEG/PNG, применяет ориентацию EXIF, RGB и resize processor.
+        Один вызов greedy, seed 42, до 384 выходных токенов; модель остаётся в памяти.
+        Пиксельный бюджет processor: 65536–589824, округление до сетки модели фиксируется в журнале.
+        qwen3-vl-2b-nf4 разрешён только при qualified=true и наличии локальных весов.
+        parent_request_id задаётся только для явного резервного запроса после OOM/timeout
+        основного профиля в текущей сессии API. Сервер проверяет исходный профиль, ошибку,
+        совпадение crop и SHA-256 исходного файла; допускает не более одного резервного
+        потомка. Без parent_request_id допущенный 2B можно выбрать сразу как экономичный режим.
+        Не использовать резерв для исправления неопределённости или некачественного фото.
+        Ни JSON-ошибка, ни OOM не вызывают автоматический повтор.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [request_id, crop, image]
+              properties:
+                request_id:
+                  type: string
+                  format: uuid
+                  description: Новый UUID для каждого явного запроса пользователя, включая резервный.
+                parent_request_id:
+                  type: string
+                  format: uuid
+                  description: UUID неудачного запроса 4B; при отсутствии поле не передавать.
+                crop:
+                  $ref: '#/components/schemas/Crop'
+                profile:
+                  $ref: '#/components/schemas/ProfileId'
+                image:
+                  type: string
+                  format: binary
+                  description: Один JPEG или PNG, не более 10485760 байт и 40000000 декодированных пикселей.
+            encoding:
+              image:
+                contentType: image/jpeg, image/png
+      responses:
+        '200':
+          description: |
+            Проверенный структурированный ответ. Неопределённость и недостаточное качество
+            декодируемого фото — нормальные исходы, а не техническая ошибка.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResponse'
+              examples:
+                suspectedScab:
+                  summary: Иллюстрация формата; не новый результат эксперимента
+                  value:
+                    request_id: 519f46b0-3798-4605-b623-792129984a41
+                    attempt_id: d51cc139-3576-4ba8-a3b4-244074f8b616
+                    parent_request_id: null
+                    crop: apple
+                    result:
+                      status: suspected_disease
+                      disease: apple_scab
+                      observations:
+                        - description: Тёмные пятна с неровными краями
+                          location: Центральная часть листа
+                      alternatives: []
+                      next_photo: Сделайте фото обратной стороны листа
+                    execution:
+                      profile: qwen3-vl-4b-nf4
+                      model_revision: ebb281ec70b05090aa6165b016eac8ec08e71b17
+                      prompt_version: observations_first-lab1
+                      taxonomy_version: apple-cherry-v1
+                      schema_version: '0.1.0'
+                      input_tokens: 926
+                      visual_tokens: 558
+                      output_tokens: 180
+                      load_ms: 0
+                      processing_ms: 13000
+        '400':
+          description: INVALID_REQUEST — отсутствующее/лишнее поле, неверный UUID, crop или profile.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: BUSY, DUPLICATE_REQUEST, FALLBACK_NOT_QUALIFIED или INVALID_PARENT. Генерация не начата.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '413':
+          description: INPUT_TOO_LARGE — превышен лимит файла, тела запроса или исходных пикселей.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '415':
+          description: UNSUPPORTED_MEDIA_TYPE — файл не JPEG/PNG либо тело не multipart/form-data.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '422':
+          description: INVALID_IMAGE — файл не декодируется; CONTEXT_LIMIT — превышен бюджет после processor.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '500':
+          description: OUTPUT_REJECTED или INFERENCE_FAILED; частичный диагноз не возвращается.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '503':
+          description: MODEL_UNAVAILABLE, CUDA_UNAVAILABLE или GPU_OOM; облачного перехода нет.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '504':
+          description: MODEL_LOAD_TIMEOUT или INFERENCE_TIMEOUT; worker остановлен, ресурсы освобождаются.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+components:
+  securitySchemes:
+    LocalSessionToken:
+      type: http
+      scheme: bearer
+      description: Локальный токен текущей сессии; не JWT и не облачный аккаунт.
+  responses:
+    Unauthorized:
+      description: UNAUTHORIZED — отсутствует или неверен локальный токен.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+  schemas:
+    Crop:
+      type: string
+      enum: [apple, cherry]
+    ProfileId:
+      type: string
+      enum: [qwen3-vl-4b-nf4, qwen3-vl-2b-nf4]
+      default: qwen3-vl-4b-nf4
+    Disease:
+      type: string
+      enum: [apple_scab, apple_rust, apple_powdery_mildew, cherry_leaf_spot, cherry_powdery_mildew]
+    Health:
+      type: object
+      additionalProperties: false
+      required: [api_version, session_id, worker_state, loaded_profile, active_request_id]
+      properties:
+        api_version: { type: string, const: '0.1.0' }
+        session_id: { type: string, format: uuid }
+        worker_state:
+          type: string
+          enum: [unloaded, loading, ready, busy, recovering, unavailable]
+        loaded_profile:
+          enum: [qwen3-vl-4b-nf4, qwen3-vl-2b-nf4, null]
+        active_request_id:
+          type: [string, 'null']
+          format: uuid
+    ModelProfile:
+      type: object
+      additionalProperties: false
+      required: [profile, model_id, revision, local_available, qualified]
+      description: |
+        primary всегда описывает 4B, fallback — 2B. До независимого теста 2B qualified=false.
+        qualified у 4B означает допуск экспериментального MVP, не подтверждённую точность.
+        revision — commit локального snapshot; null, пока snapshot не зарегистрирован.
+        Для 4B базовый commit ebb281ec70b05090aa6165b016eac8ec08e71b17.
+      properties:
+        profile: { $ref: '#/components/schemas/ProfileId' }
+        model_id:
+          type: string
+          enum: [Qwen/Qwen3-VL-4B-Instruct, Qwen/Qwen3-VL-2B-Instruct]
+        revision:
+          type: [string, 'null']
+          pattern: '^[0-9a-f]{40}$'
+        local_available: { type: boolean }
+        qualified: { type: boolean }
+    Observation:
+      type: object
+      additionalProperties: false
+      required: [description, location]
+      properties:
+        description:
+          type: string
+          minLength: 1
+          pattern: '\S'
+          description: Непосредственно видимый признак; без неподтверждённых лабораторных утверждений.
+        location:
+          type: string
+          minLength: 1
+          pattern: '\S'
+          description: Приблизительное положение; не маска, координаты или площадь поражения.
+    ModelResult:
+      type: object
+      additionalProperties: false
+      required: [status, disease, observations, alternatives, next_photo]
+      properties:
+        status:
+          type: string
+          enum: [no_visible_symptoms, suspected_disease, other_or_unknown, insufficient_image]
+        disease:
+          oneOf:
+            - $ref: '#/components/schemas/Disease'
+            - type: 'null'
+        observations:
+          type: array
+          maxItems: 3
+          items: { $ref: '#/components/schemas/Observation' }
+        alternatives:
+          type: array
+          maxItems: 2
+          uniqueItems: true
+          items: { $ref: '#/components/schemas/Disease' }
+          description: Допустимые альтернативы выбранной культуры; основная disease исключена сервером.
+        next_photo:
+          type: [string, 'null']
+          description: Краткий запрос другого ракурса либо null.
+      oneOf:
+        - properties:
+            status: { const: suspected_disease }
+            disease: { $ref: '#/components/schemas/Disease' }
+        - properties:
+            status:
+              enum: [no_visible_symptoms, other_or_unknown, insufficient_image]
+            disease: { type: 'null' }
+    AnalysisResponse:
+      type: object
+      additionalProperties: false
+      required: [request_id, attempt_id, parent_request_id, crop, result, execution]
+      properties:
+        request_id: { type: string, format: uuid }
+        attempt_id:
+          type: string
+          format: uuid
+          description: Серверный UUID единственной попытки; используется для локального журнала.
+        parent_request_id: { type: [string, 'null'], format: uuid }
+        crop: { $ref: '#/components/schemas/Crop' }
+        result: { $ref: '#/components/schemas/ModelResult' }
+        execution: { $ref: '#/components/schemas/Execution' }
+      allOf:
+        - if:
+            properties:
+              crop: { const: apple }
+          then:
+            properties:
+              result:
+                properties:
+                  disease: { enum: [apple_scab, apple_rust, apple_powdery_mildew, null] }
+                  alternatives:
+                    items: { enum: [apple_scab, apple_rust, apple_powdery_mildew] }
+        - if:
+            properties:
+              crop: { const: cherry }
+          then:
+            properties:
+              result:
+                properties:
+                  disease: { enum: [cherry_leaf_spot, cherry_powdery_mildew, null] }
+                  alternatives:
+                    items: { enum: [cherry_leaf_spot, cherry_powdery_mildew] }
+    Execution:
+      type: object
+      additionalProperties: false
+      required: [profile, model_revision, prompt_version, taxonomy_version, schema_version, input_tokens, visual_tokens, output_tokens, load_ms, processing_ms]
+      description: |
+        Метаданные формирует сервер, не модель. Полный журнал дополнительно содержит хеши,
+        версии processor/библиотек, dtype, grid, времена этапов, пики allocated/reserved и сырой ответ.
+        Версии являются неизменяемыми идентификаторами локальных снимков конфигурации.
+      properties:
+        profile: { $ref: '#/components/schemas/ProfileId' }
+        model_revision: { type: string, pattern: '^[0-9a-f]{40}$' }
+        prompt_version: { type: string, minLength: 1 }
+        taxonomy_version: { type: string, minLength: 1 }
+        schema_version: { type: string, const: '0.1.0' }
+        input_tokens: { type: integer, minimum: 1, maximum: 3712 }
+        visual_tokens:
+          type: integer
+          minimum: 1
+          description: Уже входят в input_tokens; не прибавлять повторно.
+        output_tokens: { type: integer, minimum: 1, maximum: 384 }
+        load_ms:
+          type: number
+          minimum: 0
+          description: Загрузка в рамках запроса; 0, если нужный профиль уже загружен.
+        processing_ms:
+          type: number
+          minimum: 0
+          description: От готовности модели до конца Q3, без загрузки и передачи HTTP.
+    ErrorEnvelope:
+      type: object
+      additionalProperties: false
+      required: [request_id, attempt_id, error]
+      properties:
+        request_id:
+          type: [string, 'null']
+          format: uuid
+          description: null, если request_id не удалось безопасно прочитать и проверить.
+        attempt_id:
+          type: [string, 'null']
+          format: uuid
+          description: null для отказа до регистрации попытки.
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message, stage, next_action, fallback_available]
+          properties:
+            code:
+              type: string
+              enum:
+                - UNAUTHORIZED
+                - INVALID_REQUEST
+                - BUSY
+                - DUPLICATE_REQUEST
+                - FALLBACK_NOT_QUALIFIED
+                - INVALID_PARENT
+                - INPUT_TOO_LARGE
+                - UNSUPPORTED_MEDIA_TYPE
+                - INVALID_IMAGE
+                - CONTEXT_LIMIT
+                - OUTPUT_REJECTED
+                - INFERENCE_FAILED
+                - MODEL_UNAVAILABLE
+                - CUDA_UNAVAILABLE
+                - GPU_OOM
+                - MODEL_LOAD_TIMEOUT
+                - INFERENCE_TIMEOUT
+            message:
+              type: string
+              minLength: 1
+              description: Безопасное сообщение для UI, без traceback, локальных путей и сырого ответа модели.
+            stage:
+              type: string
+              enum: [transport, Q0, Q1, Q2, inference, Q3]
+            next_action:
+              type: string
+              enum: [fix_request, choose_another_image, wait, check_local_setup, review_log, offer_fallback]
+              description: Подсказка UI; не команда автоматического повторения запроса.
+            fallback_available:
+              type: boolean
+              description: |
+                true только после GPU_OOM/MODEL_LOAD_TIMEOUT/INFERENCE_TIMEOUT профиля 4B,
+                если локальная 2B допущена и резервный запрос для этого родителя ещё не создан.
+                В этом случае next_action=offer_fallback; в остальных случаях false.
