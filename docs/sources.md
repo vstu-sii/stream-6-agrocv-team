@@ -1,58 +1,26 @@
-# Источники и границы доказательств
+# Основания проектирования
 
-Проверено 25.10.2026. Это краткая опора PRODUCT / VO, не замена техническому ресёрчу AI Engineer. Ссылки прочитаны, датасеты не скачивались, обучение не запускалось.
+Материалы курса прочитаны 31.10.2026. Они определяют форму артефактов; не подтверждают качество нашей модели или состоявшуюся проверку с человеком.
 
-## Требования курса
-
-| Источник | Для чего используем |
+| Источник | Применение |
 | --- | --- |
-| [Лаба 1](https://sii.sergeivolchkov.ru/labs/lab1) | Пять результатов PRODUCT / VO, шаги роли, критерии готовности |
-| [Цикл работы с агентом](https://sii.sergeivolchkov.ru/materials/agent/workflow) | Бриф, контекст, проверка результата человеком |
-| [Память и контекст](https://sii.sergeivolchkov.ru/materials/agent/context) | Общая память AGENTS.md и разделение краткого контекста с подробными документами |
-| [Единый язык](https://sii.sergeivolchkov.ru/materials/use-cases/glossary) | Определения, имена в коде, различение похожих сущностей |
-| [Use cases](https://sii.sergeivolchkov.ru/materials/use-cases/writing) | Понятный пользователю сценарий и исключения; подробные UC относятся к следующей лабе |
-| [Работа с моделью](https://sii.sergeivolchkov.ru/materials/ai/working-with-model) | Baseline, собственные контрольные примеры, качество, задержка и стоимость |
-| [Оценивание](https://sii.sergeivolchkov.ru/materials/labs/grading-system) | Отдельный PR роли, баллы агента и отдельная приёмка человеком |
+| [Лаба 2](https://sii.sergeivolchkov.ru/labs/lab2) | Четыре результата PRODUCT / VO, роли команды и DoD |
+| [Use cases](https://sii.sergeivolchkov.ru/materials/use-cases/writing) | Цель актёра, альтернативы, измеримые критерии и внешний прогон |
+| [UML use-case диаграмма](https://sii.sergeivolchkov.ru/materials/use-cases/uml) | Граница системы, актёры, направление extend, совпадение диаграммы и текстов |
+| [C4 и ADR](https://sii.sergeivolchkov.ru/materials/architecture/c4-levels) | Структурные решения, альтернативы, цена и проверка |
+| [Абстракции](https://sii.sergeivolchkov.ru/materials/architecture/abstractions) | Простая граница распознавания без недоказанного набора сервисов |
+| [aact](https://sii.sergeivolchkov.ru/materials/architecture/aact) | Проверка фактической архитектуры и обоснование правил; относится к работе с C4 команды |
+| [Evals](https://sii.sergeivolchkov.ru/materials/quality/evals) | Связь критериев UC с контрольными примерами, baseline и регрессией |
+| [Qwen3-VL-4B-Instruct](https://huggingface.co/Qwen/Qwen3-VL-4B-Instruct) | Официальная карточка выбранной мультимодальной модели; вход изображение + текст, генерация ответа |
+| [PlantUML CLI](https://plantuml.com/command-line) | Проверка и генерация SVG из исходника диаграммы |
 
-## Предметные источники
+Предметный охват и целевые метрики продолжают первую лабораторную: только яблони, четыре класса, существующие модели с дообучением на открытых данных при необходимости. Числовые пределы и принятый для проектирования вариант хранения/размещения требуют технической проверки.
 
-### S1. Mohanty, Hughes, Salathé, 2016
+Для Qwen3-VL применяются требования к генеративной модели: версия промпта, проверка структурированного ответа, учёт токенов, задержки и ошибок. Качество оценивается по независимым меткам изображений. Свободный чат и RAG не входят в MVP.
 
-[Using Deep Learning for Image-Based Plant Disease Detection](https://doi.org/10.3389/fpls.2016.01419).
 
-Авторы исследуют обучение классификаторов по изображениям листьев. Они отмечают существенное ухудшение результата на снимках из условий, отличающихся от обучающих. Вывод для нашего плана: отдельная проверка бытовых снимков необходима. Статья не устанавливает качество нашей будущей модели, спрос нашего сегмента или достижимость целей PRD.
+- [Docker: основы](https://sii.sergeivolchkov.ru/materials/docker/basics) — упаковка серверного приложения.
+- [Docker Compose](https://sii.sergeivolchkov.ru/materials/docker/compose) — воспроизводимый совместный запуск.
+- [Qwen3-VL-4B-Instruct](https://huggingface.co/Qwen/Qwen3-VL-4B-Instruct) — выбранная модель; порядок интеграции описан в model-usage.md.
 
-### S2. Репозиторий PlantVillage
-
-[PlantVillage-Dataset](https://github.com/spMohanty/PlantVillage-Dataset), [каталог цветных изображений](https://github.com/spMohanty/PlantVillage-Dataset/tree/master/raw/color).
-
-В каталоге есть категории яблони `healthy`, `Apple_scab`, `Black_rot`, `Cedar_apple_rust`. На их основе предложен ограниченный охват MVP. До использования AI Engineer должен проверить конкретную версию, лицензионные условия, объёмы, качество меток и разбиение по листьям. Наличие каталогов не доказывает пригодность для реального приложения.
-
-### S3. Репозиторий авторов PlantDoc
-
-[PlantDoc-Dataset](https://github.com/pratikkayal/PlantDoc-Dataset).
-
-Авторы публикуют набор с изображениями из интернета; репозиторий указывает CC BY 4.0. Это кандидат для проверки переноса на иные изображения, а не уже выбранный независимый тест. Нужно проверить соответствие четырём классам, исходные источники, атрибуцию и пересечения с обучением. Наши разрешённые бытовые фото могут дать дополнительный контроль, но пока не собраны.
-
-### S4. University of Minnesota Extension — болезни яблони
-
-- [Пятна и другие изменения листьев](https://apps.extension.umn.edu/garden/diagnose/plant/fruit/apple/leavesspots.html): признаки парши, Black rot, Cedar apple rust и мучнистой росы.
-- [Увядание и потемнение листьев](https://apps.extension.umn.edu/garden/diagnose/plant/fruit/apple/leavesbrown.html): в том числе бактериальный ожог.
-- [Cedar apple rust и родственные ржавчины](https://extension.umn.edu/garden-and-home/yard-and-garden/gardening-in-minnesota/yard-and-garden-problems/cedar-apple-rust): основание не обобщать конкретный класс датасета на все виды ржавчины.
-
-Это университетские справочные материалы, а не доказательство локальной распространённости и не наши результаты распознавания. Краткая выжимка и охват модели: [apple-diseases.md](apple-diseases.md).
-
-## Целевые показатели
-
-80% North Star, 0,80 Macro-F1, 10 секунд, 0,50 ₽, размеры пилота и пороги H1–H5 заданы для проверки MVP. Это проектные цели, а не доказанные источниками нормы или результаты измерений. Подход — существующие модели и дообучение на открытых датасетах при необходимости.
-
-## Публичные пользовательские случаи S01–S05
-
-Изучены обращения на 7dach, Reddit и Ask Extension. [Реестр с прямыми ссылками](public-research.md) содержит пять случаев, даты, уровень доступа и ограничения. [insights.md](insights.md) связывает их с вопросами исследования и решениями. Это вторичные данные о поведении пользователей, не справочные диагнозы, не интервью и не разрешение использовать фотографии для обучения.
-
-## Что ещё проверить с другими ролями
-
-- AI Engineer: выбор существующей модели, необходимость дообучения, лицензии и пригодность открытых данных, воспроизводимость, независимый тест и калибровка уверенности.
-- Quality: независимость эталонов, состав отрицательных случаев и пороги отказа; кто проверит названия болезней.
-- Delivery: доступное размещение, модель нагрузки, реальная стоимость и время ответа; удаление временных фото.
-- PRODUCT: доступ к настоящим респондентам и ценность выбранного сценария.
+[Диаграмма в PlantUML Online](https://www.plantuml.com/plantuml/uml/ZLFDRjD04BxxAOPmWOEZDab_LAfAJL1E20b5vK9wM99DQZNPhTORXOAGyYErI21LGfn10Xx0IMiQsYPzXTatOjPkKgUaWfl7yyttCnu_E52itcJGO8UofS5lSiq4Sngyfa5BK5vzJqFLKxoYFIaSVzyJ1qon9lXxh2hRdgX3ZJLydkXKUOsr6heeXNxEcXnAJFWbhhpQOap9UyjXEPTe7h3AFglpaZviSB3AJDGRIOLjfMIx81jImSFS-khIQZ7HP1KjLLwgAbSta4mkjxvII41QFgymd-T9fwvaIrHlWCLCSQsulG2OP5l9hAskvnEWcSD5ejhJ50A_u0W3FCKnJapNzAYwm01mW1Eyn13FgH7YRw1YPFlc4vL3C2U4k2JC64UE4mM357wcLm6U4O96pT4SAWNC1zaMN3apMz58Y0FNT6DsAgwi-ja2KwEoU8G3qy70zCbMQ3g08w19Ui9XN0_XgQpiS_Ku1UySc2u9KZi5Tsav3VZDfZ9zSqno50NmccP3aXiIQyU-jDufuzXyfD1Hyvpaw1Mr0jCh2xp6oUqs-dCPoy9r2V6TN1zRnn2vxPeFXBPK134d6sL1WxOS47D8prrp0cIg5usDOno61FjB7gow_K2qW037qKvt2alBTxDcAEkF6M6SzVumj6LQm0IlR9nkf7w55wO_fS_SfSyI_LTpT9CeNcJYNYRneInGn63AcNNUEqvq3k2wSOPabPchievz1UdqLeI43TZSv6yq5zMjhR9uzL_htBKSsViv_hNhNSSHKdDuBRMMJP2rwU9VjBd8kY-VkRay7I3TJRoACHt6r0qv2EOk5SFRMqqJ1_uaiptxBQpMgUcGaL_qD8jp74_XESp_0a_cVm3Rih-kJM27aogK56o2Fm00). Исходник, SVG и PNG входят в пакет.
