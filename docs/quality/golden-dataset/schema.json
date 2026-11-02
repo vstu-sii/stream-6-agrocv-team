@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AgroCV scenario eval record",
+  "type": "object",
+  "required": [
+    "id",
+    "use_case_id",
+    "scenario_type",
+    "input",
+    "harness",
+    "expected",
+    "provenance",
+    "split",
+    "not_for_independent_benchmark"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^EVAL-[0-9]{3}$"
+    },
+    "use_case_id": {
+      "type": "string",
+      "pattern": "^UC-[0-9]{2}$"
+    },
+    "scenario_type": {
+      "type": "string"
+    },
+    "input": {
+      "type": "object",
+      "required": [
+        "file",
+        "mime_type",
+        "user_text",
+        "declared_crop"
+      ]
+    },
+    "harness": {
+      "type": "object",
+      "required": [
+        "fault",
+        "expected_model_called"
+      ]
+    },
+    "expected": {
+      "type": "object",
+      "required": [
+        "mode",
+        "class_id",
+        "reason",
+        "allowed_next_steps",
+        "treatment",
+        "scope",
+        "reference_answer",
+        "text_rubric"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "assessment",
+            "cannot_assess",
+            "input_error",
+            "service_error"
+          ]
+        },
+        "class_id": {
+          "enum": [
+            null,
+            "healthy",
+            "apple_scab",
+            "black_rot",
+            "cedar_apple_rust"
+          ]
+        },
+        "allowed_next_steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "reference_answer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "text_rubric": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object"
+    },
+    "split": {
+      "const": "scenario_eval_for_development"
+    },
+    "not_for_independent_benchmark": {
+      "const": true
+    }
+  }
+}

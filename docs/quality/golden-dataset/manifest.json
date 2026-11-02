@@ -1,0 +1,35 @@
+{
+  "case_count": 40,
+  "normal_class_cases": 24,
+  "per_class": {
+    "healthy": 6,
+    "apple_scab": 6,
+    "black_rot": 6,
+    "cedar_apple_rust": 6
+  },
+  "quality_cases": 4,
+  "out_of_scope_cases": 4,
+  "invalid_upload_cases": 4,
+  "low_confidence_cases": 1,
+  "service_error_cases": 2,
+  "stub_cases": 1,
+  "original_photo_count": 32,
+  "fixture_count": 8,
+  "supported_crop": "apple",
+  "supported_classes": [
+    "healthy",
+    "apple_scab",
+    "black_rot",
+    "cedar_apple_rust"
+  ],
+  "source_commit": "7f7ecc7e1eaca78107e3affe7cb5abd9427e139a",
+  "team_repository": "https://github.com/vstu-sii/stream-6-agrocv-team",
+  "team_commit": "731741a9cc62fbede43dfadb3deb9cd174b85033",
+  "tool": "run_evals.py (Python standard library)",
+  "purpose": "scenario_eval_not_PRD_field_benchmark",
+  "rag_context_cases": 0,
+  "rag_reason": "PRD describes image classifier and sourced reference cards; retrieval architecture has not been selected",
+  "expert_review_count": 0,
+  "plant_identity_known": false,
+  "candidate_labels_need_team_acceptance": true
+}

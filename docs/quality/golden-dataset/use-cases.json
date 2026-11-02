@@ -1,0 +1,130 @@
+[
+  {
+    "id": "UC-01",
+    "type": "known_class",
+    "goal": "Получить предварительный поддерживаемый класс болезни",
+    "source": "docs/prd.md §3, §4",
+    "origin": "derived_from_repository_PRD_not_approved_team_UC",
+    "actor": "пользователь веб-приложения",
+    "input": "фото листа или явно заданный негативный ввод",
+    "expected_case_ids": [
+      "EVAL-007",
+      "EVAL-008",
+      "EVAL-009",
+      "EVAL-010",
+      "EVAL-011",
+      "EVAL-012",
+      "EVAL-013",
+      "EVAL-014",
+      "EVAL-015",
+      "EVAL-016",
+      "EVAL-017",
+      "EVAL-018",
+      "EVAL-019",
+      "EVAL-020",
+      "EVAL-021",
+      "EVAL-022",
+      "EVAL-023",
+      "EVAL-024"
+    ]
+  },
+  {
+    "id": "UC-02",
+    "type": "healthy",
+    "goal": "Получить ограниченный вывод без видимых признаков поддерживаемых болезней",
+    "source": "docs/prd.md §3, §4",
+    "origin": "derived_from_repository_PRD_not_approved_team_UC",
+    "actor": "пользователь веб-приложения",
+    "input": "фото листа или явно заданный негативный ввод",
+    "expected_case_ids": [
+      "EVAL-001",
+      "EVAL-002",
+      "EVAL-003",
+      "EVAL-004",
+      "EVAL-005",
+      "EVAL-006"
+    ]
+  },
+  {
+    "id": "UC-03",
+    "type": "bad_image",
+    "goal": "Получить просьбу переснять непригодное фото",
+    "source": "docs/prd.md §4",
+    "origin": "derived_from_repository_PRD_not_approved_team_UC",
+    "actor": "пользователь веб-приложения",
+    "input": "фото листа или явно заданный негативный ввод",
+    "expected_case_ids": [
+      "EVAL-025",
+      "EVAL-026",
+      "EVAL-027",
+      "EVAL-028"
+    ]
+  },
+  {
+    "id": "UC-04",
+    "type": "out_of_scope",
+    "goal": "Не получить известный диагноз по чужой культуре",
+    "source": "docs/prd.md §3, §7",
+    "origin": "derived_from_repository_PRD_not_approved_team_UC",
+    "actor": "пользователь веб-приложения",
+    "input": "фото листа или явно заданный негативный ввод",
+    "expected_case_ids": [
+      "EVAL-029",
+      "EVAL-030",
+      "EVAL-031",
+      "EVAL-032"
+    ]
+  },
+  {
+    "id": "UC-05",
+    "type": "invalid_upload",
+    "goal": "Получить ошибку некорректного файла до вызова модели",
+    "source": "docs/prd.md §3",
+    "origin": "derived_from_repository_PRD_not_approved_team_UC",
+    "actor": "пользователь веб-приложения",
+    "input": "фото листа или явно заданный негативный ввод",
+    "expected_case_ids": [
+      "EVAL-033",
+      "EVAL-034",
+      "EVAL-035",
+      "EVAL-036"
+    ]
+  },
+  {
+    "id": "UC-06",
+    "type": "uncertain",
+    "goal": "Получить отказ при недостаточной уверенности",
+    "source": "docs/prd.md §3, §4",
+    "origin": "derived_from_repository_PRD_not_approved_team_UC",
+    "actor": "пользователь веб-приложения",
+    "input": "фото листа или явно заданный негативный ввод",
+    "expected_case_ids": [
+      "EVAL-037"
+    ]
+  },
+  {
+    "id": "UC-07",
+    "type": "service_error",
+    "goal": "Получить понятную ошибку недоступности или тайм-аута",
+    "source": "docs/prd.md §4, §5",
+    "origin": "derived_from_repository_PRD_not_approved_team_UC",
+    "actor": "пользователь веб-приложения",
+    "input": "фото листа или явно заданный негативный ввод",
+    "expected_case_ids": [
+      "EVAL-038",
+      "EVAL-039"
+    ]
+  },
+  {
+    "id": "UC-08",
+    "type": "stub_guard",
+    "goal": "Отличить заглушку от реального диагностического результата",
+    "source": "README.md: архитектура; app/stub_gateway.py",
+    "origin": "derived_from_repository_PRD_not_approved_team_UC",
+    "actor": "пользователь веб-приложения",
+    "input": "фото листа или явно заданный негативный ввод",
+    "expected_case_ids": [
+      "EVAL-040"
+    ]
+  }
+]

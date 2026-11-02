@@ -1,0 +1,19 @@
+{
+  "dataset": "PlantVillage",
+  "authors": [
+    "Sharada P. Mohanty",
+    "David P. Hughes",
+    "Marcel Salathé"
+  ],
+  "repository": "https://github.com/spMohanty/PlantVillage-Dataset",
+  "source_commit": "7f7ecc7e1eaca78107e3affe7cb5abd9427e139a",
+  "source_card": "https://huggingface.co/datasets/mohanty/PlantVillage",
+  "source_card_license": "CC-BY-SA-3.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+  "license_evidence": "license: cc-by-sa-3.0 in author model card and repository README_HF.md",
+  "metadata_sha256": "9fbe34695a3f05583f47345e5174383226ecee9e7af9e21d979307771b2362fb",
+  "citation_doi": "10.3389/fpls.2016.01419",
+  "changes": "Original RGB photos copied unchanged with neutral filenames; quality/payload fixtures are explicitly transformed and linked to original assets. Metadata is a derived selection, not the complete dataset.",
+  "obtained_at": "2026-11-02",
+  "original_author_labels_not_specialist_review_by_team": true
+}

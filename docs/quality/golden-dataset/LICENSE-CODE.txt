@@ -1,0 +1,1 @@
+The eval scripts and authored metadata may be used, modified and shared for any purpose with attribution to the author of this lab artifact. Provided without warranty. This permission does not relicense PlantVillage images: see sources/ATTRIBUTION.md.
