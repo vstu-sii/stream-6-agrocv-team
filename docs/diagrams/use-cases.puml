@@ -1,0 +1,32 @@
+@startuml
+!pragma layout smetana
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 14
+skinparam packageStyle rectangle
+skinparam ArrowColor #48606F
+skinparam actorBorderColor #24485C
+skinparam usecaseBackgroundColor #F2F7FA
+skinparam usecaseBorderColor #52768B
+skinparam rectangleBorderColor #24485C
+title Диагностика болезней листьев яблони
+
+actor "Владелец яблони" as owner
+rectangle "Веб-система диагностики\n(браузер и сервер в Docker)" {
+  usecase "UC-01. Получить предварительный результат\nпо листу яблони\n--\nТочки расширения:\nтребуется уточнение\nрезультат показан" as UC01
+  usecase "UC-02. Уточнить результат\nпо новому снимку" as UC02
+  usecase "UC-03. Оценить полезность результата" as UC03
+}
+
+owner -- UC01
+owner -- UC02
+owner -- UC03
+UC02 ..> UC01 : <<extend>>\n[требуется уточнение]
+UC03 ..> UC01 : <<extend>>\n[результат показан]
+
+note bottom of UC01
+  Qwen3-VL-4B выполняется на сервере в Docker.
+  Фото загружается через браузер; сервер работает в Docker.
+end note
+@enduml
