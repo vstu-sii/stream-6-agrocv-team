@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Local JSONL scenario evaluator. No network requests and no model calls."""
+
 from __future__ import annotations
+
 import argparse
-from collections import Counter
 import hashlib
 import json
+from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -94,12 +96,21 @@ def validate():
     originals = [a for a in assets.values() if a["source"] == "PlantVillage"]
     if len({a["source_leaf_group"] for a in originals}) != len(originals):
         raise ValueError("Original selected leaves share source group")
-    return cases, {"structurally_valid": True, "cases": len(by_id),
-                   "use_cases": len(ucs), "original_photos": len(originals),
-                   "fixtures": len(assets) - len(originals),
-                   "source_labels": dict(counts), "expert_reviews": 0,
-                   "plant_identity_verified": False, "model_test_performed": False,
-                   "note": "Structure and source-label links verified; not expert approval or measured model quality."}
+    return cases, {
+        "structurally_valid": True,
+        "cases": len(by_id),
+        "use_cases": len(ucs),
+        "original_photos": len(originals),
+        "fixtures": len(assets) - len(originals),
+        "source_labels": dict(counts),
+        "expert_reviews": 0,
+        "plant_identity_verified": False,
+        "model_test_performed": False,
+        "note": (
+            "Structure and source-label links verified; "
+            "not expert approval or measured model quality."
+        ),
+    }
 
 
 def score_case(case, prediction, review=None):
@@ -113,42 +124,58 @@ def score_case(case, prediction, review=None):
     if "preliminary" in expected:
         checks["preliminary"] = output.get("preliminary") is True
     checks["next_step"] = output.get("next_step") in expected["allowed_next_steps"]
-    checks["message_present"] = isinstance(output.get("message"), str) and bool(output["message"].strip())
-    checks["failure_path_class_null"] = output.get("mode") == "assessment" or output.get("class_id") is None
+    checks["message_present"] = isinstance(output.get("message"), str) and bool(
+        output["message"].strip()
+    )
+    checks["failure_path_class_null"] = (
+        output.get("mode") == "assessment" or output.get("class_id") is None
+    )
     if case["harness"]["expected_model_called"] is False:
         checks["model_not_called"] = prediction.get("trace", {}).get("model_called") is False
     # Text findings come from an external review, not self-reported model flags.
     text_approved = None
     if review:
         values = review.get("rubric", [])
-        if (review.get("reviewer") and review.get("checked_at")
-                and len(values) == len(expected["text_rubric"])
-                and all(isinstance(v, bool) for v in values)):
+        if (
+            review.get("reviewer")
+            and review.get("checked_at")
+            and len(values) == len(expected["text_rubric"])
+            and all(isinstance(v, bool) for v in values)
+        ):
             text_approved = all(values)
     structured_pass = all(checks.values())
-    return {"id": case["id"], "use_case_id": case["use_case_id"],
-            "checks": checks, "structured_pass": structured_pass,
-            "text_review_pass": text_approved,
-            "complete_case_pass": structured_pass and text_approved is True}
+    return {
+        "id": case["id"],
+        "use_case_id": case["use_case_id"],
+        "checks": checks,
+        "structured_pass": structured_pass,
+        "text_review_pass": text_approved,
+        "complete_case_pass": structured_pass and text_approved is True,
+    }
 
 
 def evaluate(cases, predictions, reviews):
     p = index(predictions)
     ids = {c["id"] for c in cases}
     if set(p) != ids:
-        raise ValueError(f"Prediction IDs mismatch: missing={sorted(ids-set(p))}, extra={sorted(set(p)-ids)}")
+        raise ValueError(
+            f"Prediction IDs mismatch: missing={sorted(ids - set(p))}, extra={sorted(set(p) - ids)}"
+        )
     review_map = index(reviews)
     if not set(review_map).issubset(ids):
         raise ValueError("Unknown review IDs")
     results = [score_case(c, p[c["id"]], review_map.get(c["id"])) for c in cases]
     reviewed = sum(r["text_review_pass"] is not None for r in results)
-    return {"case_count": len(cases), "structured_pass_count": sum(r["structured_pass"] for r in results),
-            "text_reviewed_count": reviewed,
-            "complete_case_pass_count": sum(r["complete_case_pass"] for r in results),
-            "all_reviews_provided": reviewed == len(cases),
-            "all_cases_pass": all(r["complete_case_pass"] for r in results),
-            "results": results,
-            "note": "Scenario checks only. No claim about PRD Macro-F1, latency, cost or North Star."}
+    return {
+        "case_count": len(cases),
+        "structured_pass_count": sum(r["structured_pass"] for r in results),
+        "text_reviewed_count": reviewed,
+        "complete_case_pass_count": sum(r["complete_case_pass"] for r in results),
+        "all_reviews_provided": reviewed == len(cases),
+        "all_cases_pass": all(r["complete_case_pass"] for r in results),
+        "results": results,
+        "note": "Scenario checks only. No claim about PRD Macro-F1, latency, cost or North Star.",
+    }
 
 
 def main():
@@ -174,7 +201,11 @@ def main():
         else:
             if not args.predictions:
                 parser.error("evaluate requires --predictions")
-            result = evaluate(cases, read_jsonl(args.predictions), read_jsonl(args.reviews) if args.reviews else [])
+            result = evaluate(
+                cases,
+                read_jsonl(args.predictions),
+                read_jsonl(args.reviews) if args.reviews else [],
+            )
         payload = json.dumps(result, ensure_ascii=False, indent=2) + "\n"
         if args.out:
             args.out.write_text(payload, encoding="utf-8")
