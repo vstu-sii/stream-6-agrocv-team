@@ -1,12 +1,7 @@
-@startuml agrocv-context
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+@startuml c4-context
+!include <C4/C4_Context>
 
-' ── Context level ─────────────────────────────────────────────────────
-' Scope:    вся система AgroCV целиком
-' Audience: продукт, команда, заказчик
-' Shows:    кто пользуется системой, что система делает и с какими
-'           внешними системами она общается. Внутренние контейнеры
-'           скрыты — они на следующем уровне (c4-container.puml).
+title AgroCV — C4 Level 1 (System Context)
 
 Person(gardener, "Новичок в саду", "Фотографирует растение, хочет понять, что с ним не так, и что делать")
 Person(agronomist, "Агроном / продавец питомника", "Ставит диагноз по листу, отвечает за назначение обработки")
@@ -21,4 +16,5 @@ Rel(agronomist, agrocv, "Проверяет диагноз и назначени
 Rel(agrocv, model_provider, "Отправляет фото и промпт, получает распознавание и диагноз", "HTTPS")
 Rel(agrocv, drug_reference, "Уточняет препарат, дозировку и срок ожидания", "HTTPS")
 
+SHOW_LEGEND()
 @enduml

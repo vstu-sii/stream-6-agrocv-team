@@ -1,15 +1,7 @@
-@startuml agrocv-containers
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+@startuml c4-container
+!include <C4/C4_Container>
 
-' ── Container level ───────────────────────────────────────────────────
-' Scope:    одна система, один уровень глубже
-' Audience: разработчики, архитектор, ops
-' Shows:    исполняемые единицы и хранилища внутри AgroCV, технологии
-'           и то, как они общаются.
-'
-' Источник правил для aact: ../../aact.config.ts
-' Контекст уровнем выше:     c4-context.puml
-' Схема данных:              erd.puml
+title AgroCV — C4 Level 2 (Container)
 
 Person(gardener, "Новичок в саду", "Фотографирует растение и хочет понять, что с ним и что делать")
 Person(agronomist, "Агроном / продавец питомника", "Ставит диагноз по листу, отвечает за назначение обработки")
@@ -40,4 +32,5 @@ Rel(drug_acl, drug_reference, "Читает справочник препара�
 Rel(api, diagnostics_repo, "Сохраняет и читает снимки, диагнозы и назначения", "SQL")
 Rel(diagnostics_repo, diagnostics_db, "PostgreSQL")
 
+SHOW_LEGEND()
 @enduml
