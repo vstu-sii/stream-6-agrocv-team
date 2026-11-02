@@ -1,13 +1,12 @@
-
 import argparse
 import copy
 import hashlib
 import importlib.util
 import json
-from pathlib import Path
 import subprocess
 import sys
 import zipfile
+from pathlib import Path
 
 
 def load_runner(path):
@@ -25,6 +24,7 @@ def strict_answer(raw, classes, runner):
                 raise ValueError("Duplicate JSON key")
             value[key] = item
         return value
+
     json.loads(raw, object_pairs_hook=unique_pairs)
     value = runner.validate_answer(raw, classes)
     alternatives = value["alternatives"]
@@ -37,8 +37,11 @@ def strict_answer(raw, classes, runner):
 
 def accepted(raw, classes, runner, strict=False):
     try:
-        (strict_answer(raw, classes, runner) if strict
-         else runner.validate_answer(raw, classes))
+        (
+            strict_answer(raw, classes, runner)
+            if strict
+            else runner.validate_answer(raw, classes)
+        )
         return True
     except (ValueError, TypeError, KeyError):
         return False
@@ -49,17 +52,23 @@ def audit(args, runner):
         names = [n for n in archive.namelist() if n.endswith("results.jsonl")]
         if len(names) != 1:
             raise ValueError("Expected exactly one results.jsonl")
-        rows = [json.loads(line) for line in archive.read(names[0]).decode().splitlines() if line]
+        rows = [
+            json.loads(line)
+            for line in archive.read(names[0]).decode().splitlines()
+            if line
+        ]
     if not rows:
         raise ValueError("Empty results")
     classes = runner.DEFAULT_CLASSES["apple"]
     baseline = json.loads(rows[0]["raw_answer"])
     if baseline.get("disease") != "apple_scab":
         raise ValueError("This spike targets the supplied apple_scab lab1 run")
+
     def changed(**fields):
         value = copy.deepcopy(baseline)
         value.update(fields)
         return json.dumps(value, ensure_ascii=False)
+
     raw = rows[0]["raw_answer"]
     cases = {
         "markdown_fence": "```json\n" + raw + "\n```",
@@ -76,14 +85,22 @@ def audit(args, runner):
         "archive_sha256": hashlib.sha256(Path(args.archive).read_bytes()).hexdigest(),
         "runner_sha256": hashlib.sha256(Path(args.runner).read_bytes()).hexdigest(),
         "real_answers": len(rows),
-        "real_accepted_old": sum(accepted(r["raw_answer"], classes, runner) for r in rows),
-        "real_accepted_strict": sum(accepted(r["raw_answer"], classes, runner, True) for r in rows),
-        "synthetic_invalid": {name: {
-            "accepted_old": accepted(text, classes, runner),
-            "accepted_strict": accepted(text, classes, runner, True),
-        } for name, text in cases.items()},
+        "real_accepted_old": sum(
+            accepted(r["raw_answer"], classes, runner) for r in rows
+        ),
+        "real_accepted_strict": sum(
+            accepted(r["raw_answer"], classes, runner, True) for r in rows
+        ),
+        "synthetic_invalid": {
+            name: {
+                "accepted_old": accepted(text, classes, runner),
+                "accepted_strict": accepted(text, classes, runner, True),
+            }
+            for name, text in cases.items()
+        },
         "synthetic_wrong_diagnosis_accepted": accepted(
-            changed(disease="apple_rust", alternatives=[]), classes, runner, True),
+            changed(disease="apple_rust", alternatives=[]), classes, runner, True
+        ),
     }
     assert result["real_accepted_strict"] == len(rows)
     assert not any(c["accepted_strict"] for c in result["synthetic_invalid"].values())
@@ -101,13 +118,32 @@ def run(args, runner):
         raise ValueError("--model must be a local snapshot directory")
     if args.revision == "main" or not args.revision:
         raise ValueError("Record a fixed checkpoint revision, not main")
-    command = [sys.executable, str(Path(args.runner).resolve()),
-               "--manifest", args.manifest, "--model", args.model,
-               "--revision", args.revision, "--precision", "nf4",
-               "--variants", "observations_first", "--repeats", "1",
-               "--max-new-tokens", "384", "--context-limit", "4096",
-               "--max-pixels", "589824", "--output", args.output]
-    return {"mode": "local inference", "returncode": subprocess.run(command).returncode}
+    command = [
+        sys.executable,
+        str(Path(args.runner).resolve()),
+        "--manifest",
+        args.manifest,
+        "--model",
+        args.model,
+        "--revision",
+        args.revision,
+        "--precision",
+        "nf4",
+        "--variants",
+        "observations_first",
+        "--repeats",
+        "1",
+        "--max-new-tokens",
+        "384",
+        "--context-limit",
+        "4096",
+        "--max-pixels",
+        "589824",
+        "--output",
+        args.output,
+    ]
+    completed = subprocess.run(command, check=False)
+    return {"mode": "local inference", "returncode": completed.returncode}
 
 
 if __name__ == "__main__":
@@ -126,7 +162,9 @@ if __name__ == "__main__":
     if args.mode == "audit":
         output = Path(args.output)
         output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+        output.write_text(
+            json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if args.mode == "run":
         sys.exit(result["returncode"])
