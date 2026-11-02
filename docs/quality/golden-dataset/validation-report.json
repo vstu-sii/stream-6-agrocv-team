@@ -1,0 +1,17 @@
+{
+  "structurally_valid": true,
+  "cases": 40,
+  "use_cases": 8,
+  "original_photos": 32,
+  "fixtures": 8,
+  "source_labels": {
+    "healthy": 6,
+    "apple_scab": 6,
+    "black_rot": 6,
+    "cedar_apple_rust": 6
+  },
+  "expert_reviews": 0,
+  "plant_identity_verified": false,
+  "model_test_performed": false,
+  "note": "Structure and source-label links verified; not expert approval or measured model quality."
+}
