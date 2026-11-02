@@ -54,9 +54,7 @@ PROMPTS = {
 
 
 def write_json(path, value):
-    Path(path).write_text(
-        json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    Path(path).write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def doctor():
@@ -86,9 +84,7 @@ def doctor():
         result["torch_cuda_build"] = torch.version.cuda
         if torch.cuda.is_available():
             result["gpu"] = torch.cuda.get_device_name(0)
-            result["vram_gib"] = (
-                torch.cuda.get_device_properties(0).total_memory / 1024**3
-            )
+            result["vram_gib"] = torch.cuda.get_device_properties(0).total_memory / 1024**3
         import transformers
 
         required_classes = (
@@ -143,16 +139,12 @@ def load_cases(args):
             or any(not isinstance(x, str) or not x or x in STATUSES for x in classes)
             or len(set(classes)) != len(classes)
         ):
-            raise ValueError(
-                f"{cid}: classes must be unique nonempty disease identifiers"
-            )
+            raise ValueError(f"{cid}: classes must be unique nonempty disease identifiers")
         case["classes"] = classes
         if case.get("label") is not None and case["label"] not in set(classes) | (
             STATUSES - {"suspected_disease"}
         ):
-            raise ValueError(
-                f"{cid}: label must be a disease id or a non-disease status"
-            )
+            raise ValueError(f"{cid}: label must be a disease id or a non-disease status")
         path = (base / case["image"]).resolve()
         image = read_image(path)  # Validate before allocating GPU memory.
         case.update(
@@ -207,11 +199,7 @@ def validate_answer(text, classes):
         ):
             raise ValueError("Invalid observation item")
     alts = value["alternatives"]
-    if (
-        not isinstance(alts, list)
-        or len(alts) > 2
-        or any(x not in classes for x in alts)
-    ):
+    if not isinstance(alts, list) or len(alts) > 2 or any(x not in classes for x in alts):
         raise ValueError("Invalid alternatives")
     if value["next_photo"] is not None and not isinstance(value["next_photo"], str):
         raise ValueError("Invalid next_photo")
@@ -219,9 +207,7 @@ def validate_answer(text, classes):
 
 
 def prediction(value):
-    return (
-        value["disease"] if value["status"] == "suspected_disease" else value["status"]
-    )
+    return value["disease"] if value["status"] == "suspected_disease" else value["status"]
 
 
 def summarize(rows, outdir, mode):
@@ -262,8 +248,7 @@ def summarize(rows, outdir, mode):
         groups[(row["case_id"], row["variant"])].append(row)
     for (cid, variant), group in groups.items():
         counts = Counter(
-            r.get("prediction") or f"ERROR:{r.get('error_type', 'invalid')}"
-            for r in group
+            r.get("prediction") or f"ERROR:{r.get('error_type', 'invalid')}" for r in group
         )
         lines.append(f"- {cid} / {variant}: {dict(counts)}")
     lines += [
@@ -296,9 +281,7 @@ def parse_args(argv=None):
         help="Prefer a pinned cached commit for reproducibility",
     )
     p.add_argument("--precision", choices=["nf4", "bf16", "fp16"], default="nf4")
-    p.add_argument(
-        "--variants", nargs="+", choices=list(PROMPTS), default=list(PROMPTS)
-    )
+    p.add_argument("--variants", nargs="+", choices=list(PROMPTS), default=list(PROMPTS))
     p.add_argument("--repeats", type=int, default=3)
     p.add_argument("--min-pixels", type=int, default=256 * 256)
     p.add_argument("--max-pixels", type=int, default=768 * 768)
@@ -342,9 +325,7 @@ def main(argv=None):
         "environment": doctor(),
         "cases": cases,
         "system_prompt": SYSTEM,
-        "prompts": {
-            c["id"]: {v: make_prompt(c, v) for v in args.variants} for c in cases
-        },
+        "prompts": {c["id"]: {v: make_prompt(c, v) for v in args.variants} for c in cases},
         "script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
     }
     write_json(outdir / "run.json", metadata)
@@ -368,9 +349,7 @@ def main(argv=None):
         )
 
         if not torch.cuda.is_available():
-            raise RuntimeError(
-                "CUDA unavailable. Use --doctor in the target Conda environment."
-            )
+            raise RuntimeError("CUDA unavailable. Use --doctor in the target Conda environment.")
         dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
         if args.precision == "bf16" and not torch.cuda.is_bf16_supported():
             raise RuntimeError("BF16 unsupported; select nf4 or fp16")
@@ -408,9 +387,7 @@ def main(argv=None):
                 bnb_4bit_use_double_quant=True,
             )
         start = time.perf_counter()
-        model = Qwen3VLForConditionalGeneration.from_pretrained(
-            args.model, **kwargs
-        ).eval()
+        model = Qwen3VLForConditionalGeneration.from_pretrained(args.model, **kwargs).eval()
         if model.config.model_type != "qwen3_vl":
             raise RuntimeError("Expected Qwen3-VL dense model; check --model")
         torch.cuda.synchronize()
@@ -457,23 +434,14 @@ def main(argv=None):
                         set_seed(args.seed)
                         torch.cuda.reset_peak_memory_stats()
                         start = time.perf_counter()
-                        inputs = processor(
-                            text=[text], images=[image], return_tensors="pt"
-                        )
+                        inputs = processor(text=[text], images=[image], return_tensors="pt")
                         row["input_tokens"] = int(inputs["attention_mask"].sum().item())
                         row["visual_tokens"] = int(
-                            (inputs["input_ids"] == model.config.image_token_id)
-                            .sum()
-                            .item()
+                            (inputs["input_ids"] == model.config.image_token_id).sum().item()
                         )
                         row["image_grid_thw"] = inputs["image_grid_thw"].tolist()
-                        if (
-                            row["input_tokens"] + args.max_new_tokens
-                            > args.context_limit
-                        ):
-                            raise ValueError(
-                                "Context budget exceeded; no silent truncation"
-                            )
+                        if row["input_tokens"] + args.max_new_tokens > args.context_limit:
+                            raise ValueError("Context budget exceeded; no silent truncation")
                         inputs = inputs.to("cuda:0")
                         row["preprocess_seconds"] = time.perf_counter() - start
                         torch.cuda.synchronize()
@@ -516,22 +484,17 @@ def main(argv=None):
                         # preserve its configuration; stop on hardware/runtime faults.
                         fatal = not isinstance(exc, (ValueError, TypeError, KeyError))
                     finally:
-                        row["peak_allocated_gib"] = (
-                            torch.cuda.max_memory_allocated() / 1024**3
-                        )
-                        row["peak_reserved_gib"] = (
-                            torch.cuda.max_memory_reserved() / 1024**3
-                        )
+                        row["peak_allocated_gib"] = torch.cuda.max_memory_allocated() / 1024**3
+                        row["peak_reserved_gib"] = torch.cuda.max_memory_reserved() / 1024**3
                         inputs = output = generated = None
                         torch.cuda.empty_cache()
                         rows.append(row)
-                        with (outdir / "results.jsonl").open(
-                            "a", encoding="utf-8"
-                        ) as f:
+                        with (outdir / "results.jsonl").open("a", encoding="utf-8") as f:
                             f.write(json.dumps(row, ensure_ascii=False) + "\n")
                         summarize(rows, outdir, mode)
                     print(
-                        f"{case['id']} {variant} #{repeat + 1}: {row.get('prediction', row.get('error_type'))}"
+                        f"{case['id']} {variant} #{repeat + 1}: "
+                        f"{row.get('prediction', row.get('error_type'))}"
                     )
                     if fatal:
                         raise RuntimeError(
@@ -555,4 +518,4 @@ if __name__ == "__main__":
         raise SystemExit(main())
     except (ValueError, OSError) as exc:
         print(f"Input error: {exc}", file=sys.stderr)
-        raise SystemExit(2)
+        raise SystemExit(2) from exc

@@ -37,11 +37,7 @@ def strict_answer(raw, classes, runner):
 
 def accepted(raw, classes, runner, strict=False):
     try:
-        (
-            strict_answer(raw, classes, runner)
-            if strict
-            else runner.validate_answer(raw, classes)
-        )
+        (strict_answer(raw, classes, runner) if strict else runner.validate_answer(raw, classes))
         return True
     except (ValueError, TypeError, KeyError):
         return False
@@ -52,11 +48,7 @@ def audit(args, runner):
         names = [n for n in archive.namelist() if n.endswith("results.jsonl")]
         if len(names) != 1:
             raise ValueError("Expected exactly one results.jsonl")
-        rows = [
-            json.loads(line)
-            for line in archive.read(names[0]).decode().splitlines()
-            if line
-        ]
+        rows = [json.loads(line) for line in archive.read(names[0]).decode().splitlines() if line]
     if not rows:
         raise ValueError("Empty results")
     classes = runner.DEFAULT_CLASSES["apple"]
@@ -85,12 +77,8 @@ def audit(args, runner):
         "archive_sha256": hashlib.sha256(Path(args.archive).read_bytes()).hexdigest(),
         "runner_sha256": hashlib.sha256(Path(args.runner).read_bytes()).hexdigest(),
         "real_answers": len(rows),
-        "real_accepted_old": sum(
-            accepted(r["raw_answer"], classes, runner) for r in rows
-        ),
-        "real_accepted_strict": sum(
-            accepted(r["raw_answer"], classes, runner, True) for r in rows
-        ),
+        "real_accepted_old": sum(accepted(r["raw_answer"], classes, runner) for r in rows),
+        "real_accepted_strict": sum(accepted(r["raw_answer"], classes, runner, True) for r in rows),
         "synthetic_invalid": {
             name: {
                 "accepted_old": accepted(text, classes, runner),
@@ -162,9 +150,7 @@ if __name__ == "__main__":
     if args.mode == "audit":
         output = Path(args.output)
         output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(
-            json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        output.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if args.mode == "run":
         sys.exit(result["returncode"])
