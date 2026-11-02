@@ -30,10 +30,11 @@
 │   ├── stub_gateway.py     # заглушка модельного шлюза для dev
 │   └── stub_service.py     # заглушка сервисов для dev
 ├── database/
-│   └── schema.sql          # схема БД
+│   ├── schema.sql          # схема БД
+│   └── erd.puml            # ERD
 ├── docs/
 │   ├── adr/                # ADR архитектуры
-│   ├── architecture/       # ERD, context- и container-диаграммы в PlantUML
+│   ├── architecture/       # C4 (context, container) диаграммы в PlantUML + SVG
 │   ├── quality/            # критерии успеха, golden dataset, DoD
 │   └── ...                 # документация PRD, ресёрч, модели, эксперименты, деплой
 ├── frontend/
@@ -150,4 +151,5 @@ ruff format --check .
 
 ## Документация
 
+- [C4-архитектура: Context и Container (PlantUML и SVG)](docs/architecture/README.md)
 - [Deployment Guide](docs/deploy.md)
